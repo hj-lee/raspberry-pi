@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import os
+import sys
 import time
 import datetime
 import glob
@@ -24,7 +25,7 @@ def print_therms(thermostats):
         statname = os.path.basename(therm)
         temp_c = read_w1_slave(therm + '/w1_slave')
         print("{0}\t{1}".format(statname, temp_c))
-
+    sys.stdout.flush()
 
 def main():
     thermostats = glob.glob('/sys/bus/w1/devices/28-*')
@@ -32,4 +33,5 @@ def main():
         print_therms(thermostats)
         time.sleep(2)
 
+print('Start!')
 main()
