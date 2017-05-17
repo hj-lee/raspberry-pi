@@ -6,6 +6,8 @@ import sys
 import time
 import datetime
 import glob
+import concurrent.futures
+from concurrent.futures import ThreadPoolExecutor
 
 def read_w1_slave(slave):
     with open(slave, 'r') as f:
@@ -21,12 +23,21 @@ def read_w1_slave(slave):
 
 def print_therms(thermostats):
     print(datetime.datetime.now())
-    for therm in thermostats:
-        statname = os.path.basename(therm)
-        temp_c = read_w1_slave(therm + '/w1_slave')
-        print("{0}\t{1}".format(statname, temp_c))
+    with ThreadPoolExecutor(max_workers = len(thermostats)) as executor:
+        futures = []
+        for therm in thermostats:
+            futures.append(executor.submit(get_therm, therm))
+
+        for future in futures:
+            print(future.result())
+            
     sys.stdout.flush()
 
+def get_therm(therm):
+    statname = os.path.basename(therm)
+    temp_c = read_w1_slave(therm + '/w1_slave')
+    return "{0}\t{1}".format(statname, temp_c)
+    
 def main():
     thermostats = glob.glob('/sys/bus/w1/devices/28-*')
     while True:
