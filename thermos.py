@@ -22,27 +22,25 @@ def read_w1_slave(slave):
 
 
 def print_therms(thermostats):
-    print(datetime.datetime.now())
+    now = datetime.datetime.now()
     with ThreadPoolExecutor(max_workers = len(thermostats)) as executor:
-        futures = []
-        for therm in thermostats:
-            futures.append(executor.submit(get_therm, therm))
-
-        for future in futures:
-            print(future.result())
-            
+        futures = [executor.submit(get_therm, t) for t in thermostats]
+        therms = [f.result() for f in futures]
+        therms.insert(0, str(now))
+        print("\t".join(therms))
     sys.stdout.flush()
 
 def get_therm(therm):
-    statname = os.path.basename(therm)
     temp_c = read_w1_slave(therm + '/w1_slave')
-    return "{0}\t{1}".format(statname, temp_c)
+    return str(temp_c)
     
 def main():
     thermostats = glob.glob('/sys/bus/w1/devices/28-*')
+    statnames = [os.path.basename(t) for t in thermostats]
+    header = "time\t" + "\t".join(statnames)
+    print(header)
     while True:
         print_therms(thermostats)
         time.sleep(2)
 
-print('Start!')
 main()
